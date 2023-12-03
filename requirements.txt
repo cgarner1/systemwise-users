@@ -1,0 +1,12 @@
+bcrypt==4.1.1
+certifi==2023.11.17
+cffi==1.16.0
+cryptography==41.0.7
+ecdsa==0.18.0
+passlib==1.7.4
+pyasn1==0.5.1
+pycparser==2.21
+PyJWT==2.8.0
+python-jose==3.3.0
+rsa==4.9
+six==1.16.0
