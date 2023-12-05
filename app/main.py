@@ -1,18 +1,13 @@
 from fastapi import FastAPI
-from database import SessionLocal, engine, Base, User
+from api import users_router
+
 
 app = FastAPI()
 
+# include routers
+app.include_router(users_router, prefix="/api/v1", tags=["users"])
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@app.get("/")
+@app.get("/keepalive")
 async def root():
-    return {"messge": "helloworld"}
+    return {"message": "OK"}

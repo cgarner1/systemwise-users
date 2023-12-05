@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Depends
 from ..middleware import auth
+from database import SessionLocal, engine, Base, User
 
 router = APIRouter()
 @router.post("/api/logout")

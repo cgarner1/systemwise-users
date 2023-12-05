@@ -29,7 +29,7 @@ class User(Base):
     email = Column("email", String, index=True)
     password_hash = Column("passwordhash",String, index=True)
     created_at = Column("created",DateTime(timezone=True), server_default=func.now())
-    updated_at = Column("updated",DateTime(timezone=True), server_default=func.now())
+    updated_at = Column("updated",DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 metadata = MetaData()
 

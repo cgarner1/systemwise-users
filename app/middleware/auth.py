@@ -7,12 +7,11 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import baseModel
+from pydantic import BaseModel
 
 load_dotenv()
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-OAUTH2_SCHEME = OAuth2AuthorizationCodeBearer(tokenUrl="token")
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
 
