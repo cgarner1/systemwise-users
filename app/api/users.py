@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordBearer
+
+from passlib.context import CryptContext
+
+import bcrypt
 
 from models.request.users import RegisterUserRequest
 from middleware import auth
 
 from sqlalchemy.orm import Session
 
-users_router = APIRouter()
 from database import SessionLocal, engine, Base, User
+
+users_router = APIRouter()
+
+# oauth2_Scheme = OAuth2PasswordBearer(tokenUrl="token") todo : move to auth
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_db():
@@ -17,12 +26,13 @@ def get_db():
         db.close()
 
 @users_router.post("/users/register")
-async def register_new_user(new_user: RegisterUserRequest, db: Session = Depends(get_db)):
-    
+async def register_new_user(register_user_request: RegisterUserRequest, db: Session = Depends(get_db)):
+    hashed_password, new_salt = auth.get_password_hash(register_user_request.password)
     user = User(
-        username = RegisterUserRequest.username,
-        email=RegisterUserRequest.email,
-        password_hash=RegisterUserRequest.password # todo -> hash and salt
+        username = register_user_request.username,
+        email= register_user_request.email,
+        password_hash= hashed_password,
+        salt= new_salt
     )
 
     db.Add(user)

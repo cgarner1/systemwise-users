@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+import bcrypt
 
 load_dotenv()
 
@@ -47,3 +48,8 @@ def create_jwt(username:str) -> str:
     token = jwt.decode(payload, JWT_SECRET_KEY, algorithms=JWT_SECRET_KEY)
 
     return token
+
+def get_password_hash(password:str):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password, salt

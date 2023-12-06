@@ -27,7 +27,8 @@ class User(Base):
     id = Column("userid", Integer, primary_key=True, index=True)
     username = Column("username", String, index=True)
     email = Column("email", String, index=True)
-    password_hash = Column("passwordhash",String, index=True)
+    password_hash = Column("passwordhash", String, index=False)
+    salt = Column("salt", String, index=False)
     created_at = Column("created",DateTime(timezone=True), server_default=func.now())
     updated_at = Column("updated",DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
