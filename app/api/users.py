@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
 from passlib.context import CryptContext
@@ -7,10 +7,14 @@ import bcrypt
 
 from models.request.users import RegisterUserRequest
 from middleware import auth
+from database import SessionLocal, engine, Base, User
+from implementation import users_actions
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from database import SessionLocal, engine, Base, User
+
+
 
 users_router = APIRouter()
 
@@ -34,13 +38,17 @@ async def register_new_user(register_user_request: RegisterUserRequest, db: Sess
         password_hash= hashed_password,
         salt= new_salt
     )
-
-    db.Add(user)
-    db.commit()
-    db.refresh(user)
     
-    return user
+    try:
+        db_user = users_actions.add_user_to_db(db, user)
+        return {db_user.username, db_user.email, db_user.created_at}
+    
+    except IntegrityError as e:
+        db.rollback()
 
+        if "unique constraint" in str(e):
+            raise HTTPException(status_code=400, detail="Username or email already registered")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @users_router.get("users")
 async def get_user(current_user: str= Depends(auth.get_current_user)):

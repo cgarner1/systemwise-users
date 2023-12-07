@@ -12,8 +12,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT", 5432)
+USERS_TABLE_NAME = "users"
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"postgresql://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL)
 
@@ -23,7 +24,7 @@ SessionLocal = sessionmaker(autocommit = False, autoflush = False, bind=engine)
 Base= declarative_base()
 
 class User(Base):
-    __tablename__ = "public.users"
+    __tablename__ = USERS_TABLE_NAME
     id = Column("userid", Integer, primary_key=True, index=True)
     username = Column("username", String, index=True)
     email = Column("email", String, index=True)
