@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 import bcrypt
 
 from models.request.users_request import RegisterUserRequest
-from middleware import auth
+from middleware import auth_middleware
 from database import SessionLocal, engine, Base, User, get_db
 from implementation import users_actions
 
@@ -43,7 +43,7 @@ async def register_new_user(register_user_request: RegisterUserRequest, db: Sess
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @users_router.get("users")
-async def get_user(current_user: str= Depends(auth.get_current_user)):
+async def get_user(current_user: str= Depends(auth_middleware.get_current_user)):
     """
     Get the user for the currently logged in user
     

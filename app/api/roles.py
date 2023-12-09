@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
-from ..middleware import auth
+from ..middleware import auth_middleware
 
 router = APIRouter()
 
 # we need to authorize via user roles!!
 @router.post("/api/roles")
-async def assign_role(userId:int, role:str, current_user: str= Depends(auth.get_current_user)):
+async def assign_role(userId:int, role:str, current_user: str= Depends(auth_middleware.get_current_user)):
 
     return {"message":"assigns a role to a user"}
 

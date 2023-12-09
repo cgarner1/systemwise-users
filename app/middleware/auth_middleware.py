@@ -39,12 +39,12 @@ def get_current_user(token: str=Depends(lambda x: x.header("Authorization"))):
 def create_jwt(username:str) -> str:
     payload = {
         "sub":username,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(
+        "exp": datetime.utcnow() + timedelta(
             minutes=ACCESS_TOKEN_EXPIRE_MINUTES
         )
     }
 
-    token = jwt.decode(payload, JWT_SECRET_KEY, algorithms=JWT_SECRET_KEY)
+    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm = 'HS256')
 
     return token
 
