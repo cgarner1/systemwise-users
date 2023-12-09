@@ -5,33 +5,25 @@ from passlib.context import CryptContext
 
 import bcrypt
 
-from models.request.users import RegisterUserRequest
+from models.request.users_request import RegisterUserRequest
 from middleware import auth
-from database import SessionLocal, engine, Base, User
+from database import SessionLocal, engine, Base, User, get_db
 from implementation import users_actions
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-
-
-
 users_router = APIRouter()
 
-# oauth2_Scheme = OAuth2PasswordBearer(tokenUrl="token") todo : move to auth
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @users_router.post("/users/register")
 async def register_new_user(register_user_request: RegisterUserRequest, db: Session = Depends(get_db)):
-    hashed_password, new_salt = auth.get_password_hash(register_user_request.password)
+    
+    hashed_password, new_salt = auth.get_or_create_password_hash(register_user_request.password)
+    
+    # salt/pwd are saved as bytes datatype. Do not do any encoding/decoing here.
     user = User(
         username = register_user_request.username,
         email= register_user_request.email,

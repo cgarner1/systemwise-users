@@ -3,15 +3,14 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel
 import bcrypt
 
-load_dotenv()
 
+load_dotenv()
+oauth_password_scheme = oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
@@ -49,7 +48,19 @@ def create_jwt(username:str) -> str:
 
     return token
 
-def get_password_hash(password:str):
-    salt = bcrypt.gensalt()
+def get_or_create_password_hash(password:str, salt: bytes = None):
+    salt = bcrypt.gensalt() if salt is None else salt
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password, salt
+
+
+
+async def raise_exception_if_token_exists(authorization: str = Header(None)):
+    """
+    returns 400 to user if an auth token is passed in. Returns None if no header exists
+    """
+    
+    if authorization and authorization.startswith('Bearer '):
+        raise HTTPException(status_code=400, detail="Already Authenticated")
+    return authorization if authorization else None
+    
