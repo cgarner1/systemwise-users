@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, DateTime, func, String, MetaData, LargeBinary
+from sqlalchemy import create_engine, Column, Integer, DateTime, func, String, MetaData, LargeBinary, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -12,7 +12,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT", 5432)
+
 USERS_TABLE_NAME = "users"
+TOKENS_TABLE_NAME = "tokens"
 
 DATABASE_URL = f"postgresql://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
@@ -21,7 +23,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit = False, autoflush = False, bind=engine)
 
 # schema
-Base= declarative_base()
+Base = declarative_base()
 
 # application logic needs to treat salt/pwd as bytes NOT UTF8 encoded str
 class User(Base):
@@ -31,13 +33,25 @@ class User(Base):
     email = Column("email", String, index=True)
     password_hash = Column("passwordhash", LargeBinary, nullable = False, index=False)
     salt = Column("salt", LargeBinary, nullable = False, index=False)
-    created_at = Column("created",DateTime(timezone=True), server_default=func.now())
-    updated_at = Column("updated",DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column("created",DateTime(timezone=False), server_default=func.now())
+    updated_at = Column("updated",DateTime(timezone=False), server_default=func.now(), onupdate=func.now())
+
+class Token(Base):
+    __tablename__ = TOKENS_TABLE_NAME
+    id = Column("tokenid", Integer, primary_key=True, index=True)
+    user_id = Column("userid", Integer, ForeignKey("users.userid"), nullable=False, index=True)
+    refresh_token = Column("refresh_token", String)
+    expires_at = Column("refreshexpiresat", DateTime(timezone = False))
+    created_at = Column("created",DateTime(timezone=False), server_default=func.now())
+    updated_at = Column("updated",DateTime(timezone=False), server_default=func.now(), onupdate=func.now())
+
 
 metadata = MetaData()
 
 # creates the tables if they haven't been created yet, just in case
 Base.metadata.create_all(bind=engine)
+
+
 
 
 def get_db():

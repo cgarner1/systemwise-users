@@ -13,10 +13,11 @@ load_dotenv()
 oauth_password_scheme = oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 45
 
 
 # todo -> only gets username
-def get_current_user(token: str=Depends(lambda x: x.header("Authorization"))):
+def get_current_user_from_jwt(token: str=Depends(lambda x: x.header("Authorization"))):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -26,27 +27,46 @@ def get_current_user(token: str=Depends(lambda x: x.header("Authorization"))):
     try:
         token = token.split("Bearer ")[1]
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-        username:str = payload.get("sub")
+        user_id: int = payload.get("sub")
 
-        if username is None:
-            raise credentials_exception
-        return username
+        if user_id is not None:
+            return user_id
+        
+        raise credentials_exception
+        
     except JWTError:
         raise credentials_exception
 
 
-# todo -> jwt lacks roles
-def create_jwt(username:str) -> str:
+# todo -> jwt lacks scopes, iss
+def create_jwt(user_id : int) -> str:
     payload = {
-        "sub":username,
+        "sub":user_id,
         "exp": datetime.utcnow() + timedelta(
             minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        ),
+        "iat":datetime.utcnow()
     }
 
     token = jwt.encode(payload, JWT_SECRET_KEY, algorithm = 'HS256')
 
     return token
+
+# todo -> iss after hosting, handle secrets rotation 
+def create_refresh_token(user_id : int) -> (str, datetime):
+    now = datetime.utcnow()
+    payload = {
+        "sub":user_id,
+        "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        "iat": now
+    }
+
+    # jwt.encode modifies payload. save first, 
+    # DO NOT RETURN payload["foo"]after encoding!
+    expiry = payload["exp"]
+    refresh_token = jwt.encode(payload, JWT_SECRET_KEY, algorithm = 'HS256')
+    
+    return refresh_token, expiry
 
 def get_or_create_password_hash(password:str, salt: bytes = None):
     salt = bcrypt.gensalt() if salt is None else salt

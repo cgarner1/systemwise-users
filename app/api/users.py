@@ -21,7 +21,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 @users_router.post("/users/register")
 async def register_new_user(register_user_request: RegisterUserRequest, db: Session = Depends(get_db)):
     
-    hashed_password, new_salt = auth.get_or_create_password_hash(register_user_request.password)
+    hashed_password, new_salt = auth_middleware.get_or_create_password_hash(register_user_request.password)
     
     # salt/pwd are saved as bytes datatype. Do not do any encoding/decoing here.
     user = User(
@@ -43,7 +43,7 @@ async def register_new_user(register_user_request: RegisterUserRequest, db: Sess
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @users_router.get("users")
-async def get_user(current_user: str= Depends(auth_middleware.get_current_user)):
+async def get_user(current_user: str= Depends(auth_middleware.get_current_user_from_jwt)):
     """
     Get the user for the currently logged in user
     
