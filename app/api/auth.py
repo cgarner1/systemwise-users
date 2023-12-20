@@ -55,6 +55,6 @@ async def login(
 
 # todo -> we need the JWT AND the refresh token
 @auth_router.post("/api/refresh-token")
-async def login():
+async def refresh_token():
 
-    return {"message":"logs in a new user"}
+    return {"message":"refresh login token"}
