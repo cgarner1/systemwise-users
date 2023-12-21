@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from typing import Optional
 from models.request.auth_request import LoginRequest
@@ -8,6 +8,7 @@ from models.request.auth_request import LoginRequest
 from middleware import auth_middleware
 from database import SessionLocal, engine, Base, User, get_db
 from implementation.tokens_actions import create_or_update_refresh_token
+from implementation.users_actions import get_user_by_username
 
 
 
@@ -16,7 +17,7 @@ auth_router = APIRouter()
 @auth_router.post("/api/logout")
 async def logout(current_user:str=Depends(auth_middleware.get_current_user_from_jwt)):
     """
-    logs out a user. Think this will just invalidate the current refresh token?
+    logs out a user. This will just invalidate the current refresh token, and clear client tokens (refresh included)
     """
     return {"message":"deleted refresh token. Remove the cookie on users device"}
 
@@ -24,24 +25,27 @@ async def logout(current_user:str=Depends(auth_middleware.get_current_user_from_
 async def login(
     login_request: LoginRequest,
     token: str = Depends(auth_middleware.raise_exception_if_token_exists),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
     ):
 
     # if we have gotten past raise_exception_if_token_exists middleware, user has not passed jwt to this request
         
     # if no auth header, request the salt and pwd hash for a user.
     # Keep in mind, user.salt is bytes, NOT string
-    user : User = db.query(User).filter_by(username=login_request.username).first()
+    
+    user : User = await get_user_by_username(db, login_request.username)
+    if not user: raise HTTPException(status_code=400, detail="username not recognized.")
+    
+    
     password_attempt_hash, salt = auth_middleware.get_or_create_password_hash(login_request.password, user.salt)
 
     if password_attempt_hash == user.password_hash:
         jwt = auth_middleware.create_jwt(user.id)
         refresh_token, exp = auth_middleware.create_refresh_token(user.id)
-        print(f"outside call:{type(exp)}")
         # we always create a new token on new login, and save a SINGLE token per user.
         # more DB writes, and longer lived tokens, however, securtiy requirements have a less severe impact than most products
         # additionally, there is no case where we need multiple active sessions.
-        create_or_update_refresh_token(db, user.id, refresh_token, exp)
+        await create_or_update_refresh_token(db, user.id, refresh_token, exp)
         
         return {
             "access_token": jwt,
